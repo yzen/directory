@@ -86,7 +86,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-li
     ListView.prototype.listItemTemplate = function (_ref) {
       var name = _ref.name;
       var type = _ref.type;
-      var string = "\n\t\t\t<img class=\"app-icon\" src=\"/img/app_icons/" + name + ".png\" />\n\t\t\t<gaia-button circular disabled class=\"app-install\">\n\t\t\t\t<i class=\"action-icon\" data-icon=\"repeat\"></i>\n\t\t\t</gaia-button>\n\t\t\t<span class=\"app-description\">" + capitalize(name) + "</span>";
+      var string = "\n\t\t\t<img class=\"app-icon\" src=\"./img/app_icons/" + name + ".png\" />\n\t\t\t<gaia-button circular disabled class=\"app-install\">\n\t\t\t\t<i class=\"action-icon\" data-icon=\"repeat\"></i>\n\t\t\t</gaia-button>\n\t\t\t<span class=\"app-description\">" + capitalize(name) + "</span>";
       return string;
     };
 
