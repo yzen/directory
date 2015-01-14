@@ -27,6 +27,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
     _extends(ListController, Controller);
 
     ListController.prototype.main = function () {
+      document.addEventListener("visibilitychange", this.refreshInstalledList.bind(this));
       this.showList();
     };
 
@@ -44,7 +45,15 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
     ListController.prototype.refreshInstalledList = function () {
       var _this = this;
       this.installedApps = Object.create(null);
-      var req = navigator.mozApps.mgmt.getAll();
+
+      // Use mgmt.getAll if available to fetch apps,
+      // otherwise use mozApp.getInstalled.
+      var req;
+      if (navigator.mozApps.mgmt && navigator.mozApps.mgmt.getAll) {
+        req = navigator.mozApps.mgmt.getAll();
+      } else {
+        req = navigator.mozApps.getInstalled();
+      }
 
       req.onsuccess = function () {
         var apps = req.result;
@@ -82,14 +91,16 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
         console.log("installing hosted app, ", manifest);
         installReq = navigator.mozApps.install(manifest, {
           installMetaData: {
-            url: appData.url
+            url: appData.url,
+            revision: appData.revision
           }
         });
       } else if (type === "packaged") {
         console.log("installing packaged app, ", manifest);
         installReq = navigator.mozApps.installPackage(manifest, {
           installMetaData: {
-            url: appData.url
+            url: appData.url,
+            revision: appData.revision
           }
         });
       } else {
