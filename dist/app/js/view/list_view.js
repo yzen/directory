@@ -1,4 +1,4 @@
-define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-list", "components/gaia-button/gaia-button"], function (exports, _componentsFxosMvcDistMvc, _componentsGaiaListGaiaList, _componentsGaiaButtonGaiaButton) {
+define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-list", "components/gaia-button/gaia-button", "components/gaia-dialog/gaia-dialog-alert"], function (exports, _componentsFxosMvcDistMvc, _componentsGaiaListGaiaList, _componentsGaiaButtonGaiaButton, _componentsGaiaDialogGaiaDialogAlert) {
   "use strict";
 
   var _extends = function (child, parent) {
@@ -29,6 +29,18 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-li
     };
 
     _extends(ListView, View);
+
+    ListView.prototype.template = function () {
+      return "<gaia-dialog-alert id=\"alert-dialog\">Placeholder</gaia-dialog-alert>";
+    };
+
+    ListView.prototype.showAlertDialog = function (msg) {
+      if (!this.alertDialog) {
+        this.alertDialog = document.querySelector("#alert-dialog");
+      }
+      this.alertDialog.textContent = msg;
+      this.alertDialog.open();
+    };
 
     ListView.prototype.update = function (appList) {
       for (var manifestURL in appList) {

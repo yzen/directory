@@ -18,10 +18,15 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
   var ListView = _jsViewListView["default"];
   var ListController = (function (Controller) {
     var ListController = function ListController() {
+      var _this = this;
       this.model = new ListModel();
       this.view = new ListView();
 
       this.installedApps = Object.create(null);
+
+      window.onerror = function (e) {
+        _this.view.showAlertDialog("Unhandled exception: " + e.message);
+      };
     };
 
     _extends(ListController, Controller);
@@ -43,7 +48,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
     };
 
     ListController.prototype.refreshInstalledList = function () {
-      var _this = this;
+      var _this2 = this;
       this.installedApps = Object.create(null);
 
       // Use mgmt.getAll if available to fetch apps,
@@ -61,14 +66,15 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
         apps.forEach(function (app) {
           installedApps[app.manifestURL] = app;
         });
-        for (var manifestURL in _this.appList) {
-          _this.appList[manifestURL].installed = !!installedApps[manifestURL];
-          _this.appList[manifestURL].mozApp = installedApps[manifestURL] || false;
+        for (var manifestURL in _this2.appList) {
+          _this2.appList[manifestURL].installed = !!installedApps[manifestURL];
+          _this2.appList[manifestURL].mozApp = installedApps[manifestURL] || false;
         }
-        _this.view.update(_this.appList);
+        _this2.view.update(_this2.appList);
       };
 
       req.onerror = function (e) {
+        _this2.view.showAlertDialog("error fetching install apps: " + e.message);
         console.log("error fetching installed apps: ", e);
       };
     };
@@ -83,7 +89,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
     };
 
     ListController.prototype.installApp = function (appData) {
-      var _this2 = this;
+      var _this3 = this;
       var manifest = appData.manifestURL;
       var type = appData.type;
       var installReq;
@@ -108,10 +114,11 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
       }
 
       installReq.onerror = function (err) {
+        _this3.view.showAlertDialog("Error installing: " + err.target.error.name);
         console.log("install error", err);
       };
       installReq.onsuccess = function () {
-        _this2.refreshInstalledList();
+        _this3.refreshInstalledList();
       };
     };
 
