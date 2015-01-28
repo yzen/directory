@@ -1,10 +1,10 @@
 {
-  "name": "gaia-component",
-  "version": "0.3.0",
+  "name": "base",
+  "version": "0.0.0",
   "authors": [
     "Wilson Page <wilsonpage@me.com>"
   ],
-  "main": "gaia-component.js",
+  "main": "base.css",
   "license": "MIT",
   "ignore": [
     "**/.*",
