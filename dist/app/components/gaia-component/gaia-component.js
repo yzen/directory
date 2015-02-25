@@ -6,8 +6,9 @@
  */
 
 var textContent = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
-var removeAttribute = HTMLElement.prototype.removeAttribute;
-var setAttribute = HTMLElement.prototype.setAttribute;
+var innerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+var removeAttribute = Element.prototype.removeAttribute;
+var setAttribute = Element.prototype.setAttribute;
 var noop  = function() {};
 
 /**
@@ -148,14 +149,20 @@ var base = {
   descriptors: {
     textContent: {
       set: function(value) {
-        var node = firstChildTextNode(this);
-        if (node) { node.nodeValue = value; }
+        textContent.set.call(this, value);
+        if (this.lightStyle) { this.appendChild(this.lightStyle); }
       },
 
-      get: function() {
-        var node = firstChildTextNode(this);
-        return node && node.nodeValue;
-      }
+      get: textContent.get
+    },
+
+    innerHTML: {
+      set: function(value) {
+        innerHTML.set.call(this, value);
+        if (this.lightStyle) { this.appendChild(this.lightStyle); }
+      },
+
+      get: innerHTML.get
     }
   }
 };
@@ -194,19 +201,6 @@ function getBaseProto(proto) {
  */
 function createProto(proto, props) {
   return Object.assign(Object.create(proto), props);
-}
-
-/**
- * Return the first child textNode.
- *
- * @param  {Element} el
- * @return {TextNode}
- */
-function firstChildTextNode(el) {
-  for (var i = 0; i < el.childNodes.length; i++) {
-    var node = el.childNodes[i];
-    if (node && node.nodeType === 3) { return node; }
-  }
 }
 
 /**
@@ -287,8 +281,27 @@ function injectGlobalCss(css) {
   if (!css) return;
   var style = document.createElement('style');
   style.innerHTML = css.trim();
-  document.head.appendChild(style);
+  headReady().then(() => {
+    document.head.appendChild(style)
+  });
 }
+
+
+/**
+ * Resolves a promise once document.head is ready.
+ *
+ * @private
+ */
+function headReady() {
+  return new Promise(resolve => {
+    if (document.head) { return resolve(); }
+    window.addEventListener('load', function fn() {
+      window.removeEventListener('load', fn);
+      resolve();
+    });
+  });
+}
+
 
 /**
  * The Gecko platform doesn't yet have

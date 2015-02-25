@@ -43,7 +43,7 @@ proto.onClick = function(e) {
   var el = closest('[on-click]', e.target, this);
   if (!el) { return; }
   var method = el.getAttribute('on-click');
-  if (typeof this[method] == 'function') this[method]();
+  if (typeof this[method] == 'function') { this[method](); }
 };
 
 proto.setupAnimationListeners = function() {
@@ -487,8 +487,27 @@ var animations = `
 (function() {
   var style = document.createElement('style');
   style.innerHTML = animations;
-  document.head.appendChild(style);
+
+  headReady().then(() => {
+    document.head.appendChild(style);
+  });
+
+  /**
+   * Resolves a promise once document.head is ready.
+   *
+   * @private
+   */
+  function headReady() {
+    return new Promise(resolve => {
+      if (document.head) { return resolve(); }
+      window.addEventListener('load', function fn() {
+        window.removeEventListener('load', fn);
+        resolve();
+      });
+    });
+  }
 })();
+
 
 // Register and expose the constructor
 module.exports = document.registerElement('gaia-dialog', { prototype: proto });

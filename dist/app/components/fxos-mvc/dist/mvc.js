@@ -1278,6 +1278,18 @@
 define(["exports"], function (exports) {
   "use strict";
 
+  var _extends = function (child, parent) {
+    child.prototype = Object.create(parent.prototype, {
+      constructor: {
+        value: child,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    child.__proto__ = parent;
+  };
+
   var Model = (function () {
     var Model = function Model(properties) {
       var _this = this;
@@ -1344,8 +1356,30 @@ define(["exports"], function (exports) {
       return this;
     };
 
-    View.prototype.render = function () {
-      this.el.innerHTML = this.template();
+    View.prototype.layout = function (template) {
+      return template;
+    };
+
+    View.prototype.render = function (params) {
+      var innerHTML = "";
+
+      if (params) {
+        if (typeof params === "object") {
+          for (var index in params) {
+            var param = params[index];
+            innerHTML += this.template(param);
+          }
+        } else {
+          for (var i = 0; i < params.length; i++) {
+            var param = params[i];
+            innerHTML += this.template(param);
+          }
+        }
+      } else {
+        innerHTML = this.template();
+      }
+
+      this.el.innerHTML = this.layout(innerHTML);
     };
 
     View.prototype.template = function () {
@@ -1402,19 +1436,110 @@ define(["exports"], function (exports) {
     });
   }
 
-  var Controller = function Controller(options) {
-    options = options || {};
+  var Controller = (function () {
+    var Controller = function Controller(options) {
+      options = options || {};
 
-    for (var key in options) {
-      this[key] = options[key];
-    }
+      for (var key in options) {
+        this[key] = options[key];
+      }
 
-    // Initialize the view (if applicable) when the
-    // controller is instantiated.
-    if (this.view && typeof this.view.init === "function") {
-      this.view.init(this);
-    }
-  };
+      // Initialize the view (if applicable) when the
+      // controller is instantiated.
+      if (this.view && typeof this.view.init === "function") {
+        this.view.init(this);
+      }
+    };
+
+    Controller.prototype.teardown = function () {};
+
+    Controller.prototype.main = function () {};
+
+    return Controller;
+  })();
 
   exports.Controller = Controller;
+  var RoutingController = (function (Controller) {
+    var RoutingController = function RoutingController(controllers) {
+      Controller.call(this);
+      this.controllers = controllers;
+      this.activeController = null;
+      window.addEventListener("hashchange", this.route.bind(this));
+    };
+
+    _extends(RoutingController, Controller);
+
+    RoutingController.prototype.route = function () {
+      var route = window.location.hash.slice(1);
+      var controller = this.controllers[route];
+      if (controller) {
+        if (this.activeController) {
+          this.activeController.teardown();
+        }
+
+        this.activeController = controller;
+        controller.main();
+      }
+    };
+
+    return RoutingController;
+  })(Controller);
+
+  exports.RoutingController = RoutingController;
+  var Service = (function () {
+    var Service = function Service() {
+      this._listeners = {};
+      this._dispatchedEvents = {};
+    };
+
+    Service.prototype.addEventListener = function (name, callback, trigger) {
+      var _this2 = this;
+      if (!this._listeners[name]) {
+        this._listeners[name] = [callback];
+      } else {
+        this._listeners[name].push(callback);
+      }
+
+      if (trigger && this._dispatchedEvents[name] !== undefined) {
+        setTimeout(function () {
+          callback(_this2._dispatchedEvents[name]);
+        });
+      }
+    };
+
+    Service.prototype.removeEventListener = function (name, callback) {
+      if (!this._listeners[name]) {
+        return;
+      }
+
+      var listenerIndex;
+      this._listeners[name].find(function (listener, index) {
+        if (listener === callback) {
+          listenerIndex = index;
+        }
+
+        return listenerIndex !== undefined;
+      });
+
+      if (listenerIndex !== undefined) {
+        this._listeners[name].splice(listenerIndex, 1);
+      }
+    };
+
+    Service.prototype._dispatchEvent = function (name, params) {
+      if (!this._listeners[name]) {
+        return;
+      }
+
+      this._dispatchedEvents[name] = params || null;
+
+      this._listeners[name].forEach(function (listener) {
+        listener(params);
+      });
+    };
+
+    return Service;
+  })();
+
+  exports.Service = Service;
 });
