@@ -1,4 +1,4 @@
-define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/view/list_view"], function (exports, _componentsFxosMvcDistMvc, _jsModelListModel, _jsViewListView) {
+define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/view/tabs_view", "js/view/app_list_view", "js/view/addon_list_view", "js/view/details_view"], function (exports, _componentsFxosMvcDistMvc, _jsModelListModel, _jsViewTabsView, _jsViewAppListView, _jsViewAddonListView, _jsViewDetailsView) {
   "use strict";
 
   var _extends = function (child, parent) {
@@ -15,40 +15,58 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
 
   var Controller = _componentsFxosMvcDistMvc.Controller;
   var ListModel = _jsModelListModel["default"];
-  var ListView = _jsViewListView["default"];
+  var TabsView = _jsViewTabsView["default"];
+  var AppListView = _jsViewAppListView["default"];
+  var AddonListView = _jsViewAddonListView["default"];
+  var DetailsView = _jsViewDetailsView["default"];
   var ListController = (function (Controller) {
     var ListController = function ListController() {
-      var _this = this;
-      this.model = new ListModel();
-      this.view = new ListView();
-
       this.installedApps = Object.create(null);
 
-      window.onerror = function (e) {
-        _this.view.showAlertDialog("Unhandled exception: " + e.message);
-      };
+      this.model = new ListModel();
+      this.tabsView = new TabsView();
+      this.appView = new AppListView();
+      this.addonView = new AddonListView();
+      this.detailsView = new DetailsView();
+
+      this.tabsView.onTabChange(this.handleTabChange.bind(this));
+      document.addEventListener("visibilitychange", this.refreshInstalledList.bind(this));
     };
 
     _extends(ListController, Controller);
 
     ListController.prototype.main = function () {
-      document.addEventListener("visibilitychange", this.refreshInstalledList.bind(this));
-      this.showList();
-    };
-
-    ListController.prototype.showList = function () {
-      this.view.render();
-      document.body.appendChild(this.view.el);
-
-      this.appList = this.model.getAppList();
-      this.view.update(this.appList);
-      this.view.onAppClick(this.handleAppClick.bind(this));
-
+      this.createListIfNeeded();
       this.refreshInstalledList();
     };
 
+    ListController.prototype.createListIfNeeded = function () {
+      if (!this.alreadyCreated) {
+        this.tabsView.render();
+        document.body.appendChild(this.tabsView.el);
+        this.appView.render();
+        document.body.appendChild(this.appView.el);
+        this.addonView.render();
+        document.body.appendChild(this.addonView.el);
+        this.detailsView.render();
+        document.body.appendChild(this.detailsView.el);
+
+        this.list = this.model.getAppList();
+        this.appView.update(this.list);
+        this.addonView.update(this.list);
+        this.appView.onInstall(this.handleInstall.bind(this));
+        this.addonView.onInstall(this.handleInstall.bind(this));
+        this.appView.onDetails(this.handleDetails.bind(this));
+        this.addonView.onDetails(this.handleDetails.bind(this));
+        this.appView.activate();
+        this.detailsView.onClose(this.handleCloseDetails.bind(this));
+
+        this.alreadyCreated = true;
+      }
+    };
+
     ListController.prototype.refreshInstalledList = function () {
-      var _this2 = this;
+      var _this = this;
       this.installedApps = Object.create(null);
 
       // Use mgmt.getAll if available to fetch apps,
@@ -66,30 +84,50 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
         apps.forEach(function (app) {
           installedApps[app.manifestURL] = app;
         });
-        for (var manifestURL in _this2.appList) {
-          _this2.appList[manifestURL].installed = !!installedApps[manifestURL];
-          _this2.appList[manifestURL].mozApp = installedApps[manifestURL] || false;
+        for (var manifestURL in _this.list) {
+          _this.list[manifestURL].installed = !!installedApps[manifestURL];
+          _this.list[manifestURL].mozApp = installedApps[manifestURL] || false;
         }
-        _this2.view.update(_this2.appList);
+        _this.appView.update(_this.list);
+        _this.addonView.update(_this.list);
       };
 
       req.onerror = function (e) {
-        _this2.view.showAlertDialog("error fetching install apps: " + e.message);
+        _this.appView.showAlertDialog("error fetching install apps: " + e.message);
         console.log("error fetching installed apps: ", e);
       };
     };
 
-    ListController.prototype.handleAppClick = function (appData) {
-      var manifestURL = appData.manifestURL;
-      if (this.appList[manifestURL].mozApp) {
-        this.appList[manifestURL].mozApp.launch();
+    ListController.prototype.handleTabChange = function (activeTab) {
+      if (activeTab === "Apps") {
+        this.appView.activate();
+        this.addonView.deactivate();
       } else {
-        this.installApp(appData);
+        this.addonView.activate();
+        this.appView.deactivate();
       }
     };
 
-    ListController.prototype.installApp = function (appData) {
-      var _this3 = this;
+    ListController.prototype.handleInstall = function (data) {
+      var manifestURL = data.manifestURL;
+      if (this.list[manifestURL].mozApp) {
+        this.list[manifestURL].mozApp.launch();
+      } else {
+        this.install(data);
+      }
+    };
+
+    ListController.prototype.handleDetails = function (data) {
+      this.detailsView.show(data);
+    };
+
+    ListController.prototype.handleCloseDetails = function () {
+      this.detailsView.hide();
+      this.refreshInstalledList();
+    };
+
+    ListController.prototype.install = function (appData) {
+      var _this2 = this;
       var manifest = appData.manifestURL;
       var type = appData.type;
       var installReq;
@@ -101,7 +139,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
             revision: appData.revision
           }
         });
-      } else if (type === "packaged") {
+      } else if (type === "packaged" || type === "addon") {
         console.log("installing packaged app, ", manifest);
         installReq = navigator.mozApps.installPackage(manifest, {
           installMetaData: {
@@ -114,11 +152,11 @@ define(["exports", "components/fxos-mvc/dist/mvc", "js/model/list_model", "js/vi
       }
 
       installReq.onerror = function (err) {
-        _this3.view.showAlertDialog("Error installing: " + err.target.error.name);
+        _this2.appView.showAlertDialog("Error installing: " + err.target.error.name);
         console.log("install error", err);
       };
       installReq.onsuccess = function () {
-        _this3.refreshInstalledList();
+        _this2.refreshInstalledList();
       };
     };
 

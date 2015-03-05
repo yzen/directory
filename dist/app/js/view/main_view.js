@@ -1,4 +1,4 @@
-define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-header/dist/gaia-header"], function (exports, _componentsFxosMvcDistMvc, _componentsGaiaHeaderDistGaiaHeader) {
+define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-header/dist/gaia-header", "components/gaia-dialog/gaia-dialog", "components/gaia-dialog/gaia-dialog-alert"], function (exports, _componentsFxosMvcDistMvc, _componentsGaiaHeaderDistGaiaHeader, _componentsGaiaDialogGaiaDialog, _componentsGaiaDialogGaiaDialogAlert) {
   "use strict";
 
   var _extends = function (child, parent) {
@@ -22,7 +22,7 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-header/dist/
     _extends(MainView, View);
 
     MainView.prototype.template = function () {
-      var string = "\n\t\t  <gaia-header>\n\t\t\t\t<h1>Apps</h1>\n\t\t\t</gaia-header>";
+      var string = "\n      <gaia-header>\n        <h1>Hackerplace</h1>\n        <a id=\"upload-link\" target=\"_blank\" href=\"https://github.com/fxos/directory\"></a>\n      </gaia-header>\n      <gaia-dialog-alert id=\"alert-dialog\">Placeholder</gaia-dialog-alert>";
       return string;
     };
 

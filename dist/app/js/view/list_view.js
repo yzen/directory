@@ -1,4 +1,4 @@
-define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-list", "components/gaia-button/gaia-button", "components/gaia-dialog/gaia-dialog-alert"], function (exports, _componentsFxosMvcDistMvc, _componentsGaiaListGaiaList, _componentsGaiaButtonGaiaButton, _componentsGaiaDialogGaiaDialogAlert) {
+define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-list", "components/gaia-button/gaia-button"], function (exports, _componentsFxosMvcDistMvc, _componentsGaiaListGaiaList, _componentsGaiaButtonGaiaButton) {
   "use strict";
 
   var _extends = function (child, parent) {
@@ -23,16 +23,14 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-li
   var ListView = (function (View) {
     var ListView = function ListView() {
       this.el = document.createElement("gaia-list");
-      this.el.id = "app-list";
-      this.appElements = Object.create(null);
-      this.clickHandlers = [];
+      this.el.className = "install-list";
+
+      this.elements = Object.create(null);
+      this.installHandlers = [];
+      this.detailsHandlers = [];
     };
 
     _extends(ListView, View);
-
-    ListView.prototype.template = function () {
-      return "<gaia-dialog-alert id=\"alert-dialog\">Placeholder</gaia-dialog-alert>";
-    };
 
     ListView.prototype.showAlertDialog = function (msg) {
       if (!this.alertDialog) {
@@ -42,63 +40,84 @@ define(["exports", "components/fxos-mvc/dist/mvc", "components/gaia-list/gaia-li
       this.alertDialog.open();
     };
 
-    ListView.prototype.update = function (appList) {
-      for (var manifestURL in appList) {
-        var appData = appList[manifestURL];
-        if (!this.appElements[manifestURL]) {
-          this.appElements[manifestURL] = this.addAppElement(appData);
+    ListView.prototype.update = function (list) {
+      for (var manifestURL in list) {
+        var data = list[manifestURL];
+        if (!this.elements[manifestURL]) {
+          this.elements[manifestURL] = this.addElement(data);
         }
-        this.updateAppElement(this.appElements[manifestURL], appData);
+        this.updateElements(this.elements[manifestURL], data);
       }
     };
 
-    ListView.prototype.onAppClick = function (handler) {
-      if (this.clickHandlers.indexOf(handler) === -1) {
-        this.clickHandlers.push(handler);
+    ListView.prototype.onInstall = function (handler) {
+      if (this.installHandlers.indexOf(handler) === -1) {
+        this.installHandlers.push(handler);
       }
     };
 
-    ListView.prototype.offAppClick = function (handler) {
-      var index = this.clickHandlers.indexOf(handler);
+    ListView.prototype.offInstall = function (handler) {
+      var index = this.installHandlers.indexOf(handler);
       if (index !== -1) {
-        this.clickHandlers.splice(index, 1);
+        this.installHandlers.splice(index, 1);
       }
     };
 
-    ListView.prototype.addAppElement = function (appData) {
+    ListView.prototype.onDetails = function (handler) {
+      if (this.detailsHandlers.indexOf(handler) === -1) {
+        this.detailsHandlers.push(handler);
+      }
+    };
+
+    ListView.prototype.offDetails = function (handler) {
+      var index = this.detailsHandlers.indexOf(handler);
+      if (index !== -1) {
+        this.detailsHandlers.splice(index, 1);
+      }
+    };
+
+    ListView.prototype.addElement = function (data) {
       var item = document.createElement("li");
-      item.className = "app-item";
-      item.innerHTML = this.listItemTemplate(appData);
+      item.className = "item";
+      item.innerHTML = this.listItemTemplate(data);
       this.el.appendChild(item);
 
-      item.querySelector(".app-install").addEventListener("click", function (appData) {
-        this.clickHandlers.forEach(function (handler) {
-          handler(appData);
+      item.addEventListener("click", function (data) {
+        this.detailsHandlers.forEach(function (handler) {
+          handler(data);
         });
-      }.bind(this, appData));
+      }.bind(this, data));
+
+      item.querySelector(".install-button").addEventListener("click", function (data) {
+        this.installHandlers.forEach(function (handler) {
+          handler(data);
+        });
+      }.bind(this, data));
+
       return item;
     };
 
-    ListView.prototype.updateAppElement = function (appElement, appData) {
-      var button = appElement.querySelector(".app-install");
-      var icon = button.querySelector(".action-icon");
-
-      if (appData.installed === true) {
-        button.disabled = false;
-        icon.dataset.icon = "play";
-      } else if (appData.installed === false) {
-        button.disabled = false;
-        icon.dataset.icon = "download";
+    ListView.prototype.updateElements = function (element, data) {
+      var button = element.querySelector(".install-button");
+      if (data.installed === true) {
+        button.textContent = "Launch";
       } else {
-        button.disabled = true;
-        icon.dataset.icon = "repeat";
+        button.textContent = "Install";
       }
+    };
+
+    ListView.prototype.activate = function () {
+      this.el.classList.add("active");
+    };
+
+    ListView.prototype.deactivate = function () {
+      this.el.classList.remove("active");
     };
 
     ListView.prototype.listItemTemplate = function (_ref) {
       var name = _ref.name;
-      var type = _ref.type;
-      var string = "\n\t\t\t<img class=\"app-icon\" src=\"./img/app_icons/" + name + ".png\" />\n\t\t\t<h1 flex class=\"app-description\">" + capitalize(name) + "</h1>\n\t\t\t<gaia-button circular disabled class=\"app-install\">\n\t\t\t\t<i class=\"action-icon\" data-icon=\"repeat\"></i>\n\t\t\t</gaia-button>";
+      var author = _ref.author;
+      var string = "\n      <img class=\"icon\" src=\"./img/app_icons/" + name + ".png\" />\n      <div flex class=\"description\">\n        <p class=\"name\">" + capitalize(name) + "</p>\n        <p class=\"author\">" + author + "</p>\n      </div>\n      <button class=\"install-button\">Loading...</button>";
       return string;
     };
 

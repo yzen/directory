@@ -1,4 +1,4 @@
-define(["exports", "components/fxos-mvc/dist/mvc", "js/view/main_view", "js/controller/list_controller"], function (exports, _componentsFxosMvcDistMvc, _jsViewMainView, _jsControllerListController) {
+define(["exports", "components/fxos-mvc/dist/mvc", "gaia-component", "gaia-dialog", "js/view/main_view", "js/controller/list_controller"], function (exports, _componentsFxosMvcDistMvc, _gaiaComponent, _gaiaDialog, _jsViewMainView, _jsControllerListController) {
   "use strict";
 
   var _extends = function (child, parent) {
