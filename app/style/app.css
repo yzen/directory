@@ -59,8 +59,8 @@ gaia-header #upload-link {
 .install-list .install-button {
   --button-background: var(--color-blue);
   --button-background-active: var(--background);
-  --button-font-size: 12px;
-  --button-height: 30px;
+  font-size: 12px !important;
+  height: 30px !important;
   min-width: 75px !important;
   padding: 0 !important;
   margin: 0 !important;
